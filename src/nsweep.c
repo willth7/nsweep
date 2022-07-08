@@ -20,191 +20,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-uint8_t* field;
-uint8_t* flag;
-uint8_t w = 10;
-uint8_t h = 12;
-int16_t f;
-uint16_t m = 25;
-int8_t run;
+#include "nsweep/field.h"
+#include "nsweep/ascii.h"
 
-GLFWwindow* glfw_win;
-uint8_t tile_w = 40;
-
-gfx_t* gfx;
-gfx_win_t* win;
-
-uint32_t pos[8192];
-uint32_t tex[8192];
-uint32_t ind[5120];
 uint32_t uni[2];
-
-void init_field() {
-	gfx_resz(gfx, win, w * tile_w, h * tile_w);
-	glfwSetWindowSize(glfw_win, w * tile_w, h * tile_w);
-	
-	uni[0] = w * tile_w;
-	uni[1] = h * tile_w;
-	
-	field = calloc(w * h, 1);
-	flag = calloc(w * h, 1);
-	f = m;
-	uint16_t i = 0;
-	for (uint8_t hi = 0; hi < h; hi++) {
-		for (uint8_t wi = 0; wi < w; wi++) {
-			pos[i * 8 + 0] = wi * tile_w;
-			pos[i * 8 + 1] = hi * tile_w;
-			
-			pos[i * 8 + 2] = wi * tile_w;
-			pos[i * 8 + 3] = (hi + 1) * tile_w;
-			
-			pos[i * 8 + 4] = (wi + 1) * tile_w;
-			pos[i * 8 + 5] = hi * tile_w;
-			
-			pos[i * 8 + 6] = (wi + 1) * tile_w;
-			pos[i * 8 + 7] = (hi + 1) * tile_w;
-			
-			tex[i * 8 + 0] = 11;
-			tex[i * 8 + 1] = 0;
-			
-			tex[i * 8 + 2] = 11;
-			tex[i * 8 + 3] = 1;
-			
-			tex[i * 8 + 4] = 12;
-			tex[i * 8 + 5] = 0;
-			
-			tex[i * 8 + 6] = 12;
-			tex[i * 8 + 7] = 1;
-			
-			ind[i * 5] = i * 4;
-			ind[i * 5 + 1] = i * 4 + 1;
-			ind[i * 5 + 2] = i * 4 + 2;
-			ind[i * 5 + 3] = i * 4 + 3;
-			ind[i * 5 + 4] = 0xffffffff;
-			
-			i++;
-		}
-	}
-	srand((uint64_t) malloc(1));
-	for (uint8_t i = 0; i < m;) {
-		uint8_t wi = rand();
-		while (wi >= w) wi = rand();
-		
-		uint8_t hi = rand();
-		while (hi >= h) hi = rand();
-		
-		if (*(field + (hi * w) + wi) != 9) {
-			*(field + (hi * w) + wi) = 9;
-			if (wi > 0 && *(field + (hi * w) + (wi - 1)) != 9) (*(field + (hi * w) + (wi - 1)))++;
-			if (hi > 0 && *(field + ((hi - 1) * w) + wi) != 9) (*(field + ((hi - 1) * w) + wi))++;
-			if (wi < (w - 1) && *(field + (hi * w) + (wi + 1)) != 9) (*(field + (hi * w) + (wi + 1)))++;
-			if (hi < (h - 1) && *(field + ((hi + 1) * w) + wi) != 9) (*(field + ((hi + 1) * w) + wi))++;
-			if (wi > 0 && hi > 0 && *(field + ((hi - 1) * w) + (wi - 1)) != 9) (*(field + ((hi - 1) * w) + (wi - 1)))++;
-			if (wi > 0 && hi < (h - 1) && *(field + ((hi + 1) * w) + (wi - 1)) != 9) (*(field + ((hi + 1) * w) + (wi - 1)))++;
-			if (wi < (w - 1) && hi > 0 && *(field + ((hi - 1) * w) + (wi + 1)) != 9) (*(field + ((hi - 1) * w) + (wi + 1)))++;
-			if (wi < (w - 1) && hi < (h - 1) && *(field + ((hi + 1) * w) + (wi + 1)) != 9) (*(field + ((hi + 1) * w) + (wi + 1)))++;
-			i++;
-		}
-	}
-	run = 1;
-}
-
-void set_field(uint8_t x, uint8_t y, uint8_t a) {
-	pos[((y * w) + x) * 8 + 0] = x * tile_w;
-	pos[((y * w) + x) * 8 + 1] = y * tile_w;
-	
-	pos[((y * w) + x) * 8 + 2] = x * tile_w;
-	pos[((y * w) + x) * 8 + 3] = (y + 1) * tile_w;
-	
-	pos[((y * w) + x) * 8 + 4] = (x + 1) * tile_w;
-	pos[((y * w) + x) * 8 + 5] = y * tile_w;
-	
-	pos[((y * w) + x) * 8 + 6] = (x + 1) * tile_w;
-	pos[((y * w) + x) * 8 + 7] = (y + 1) * tile_w;
-	
-	tex[((y * w) + x) * 8 + 0] = a;
-	tex[((y * w) + x) * 8 + 1] = 0;
-	
-	tex[((y * w) + x) * 8 + 2] = a;
-	tex[((y * w) + x) * 8 + 3] = 1;
-	
-	tex[((y * w) + x) * 8 + 4] = a + 1;
-	tex[((y * w) + x) * 8 + 5] = 0;
-	
-	tex[((y * w) + x) * 8 + 6] = a + 1;
-	tex[((y * w) + x) * 8 + 7] = 1;
-}
-
-void deft() {
-	for (uint8_t hi = 0; hi < h; hi++) {
-		for (uint8_t wi = 0; wi < w; wi++) {
-			if (*(field + (hi * w) + wi) == 9 && *(flag + (hi * w) + wi) == 0) set_field(wi, hi, 12);
-			if (*(field + (hi * w) + wi) != 9 && *(flag + (hi * w) + wi) == 2) set_field(wi, hi, 10);
-		}
-	}
-}
-
-void lprs_field(uint8_t x, uint8_t y) {
-	if (!run) return;
-	if (*(field + (y * w) + x) == 9 && *(flag + (y * w) + x) == 0) {
-		deft();
-		run = 0;
-	}
-	else if (*(flag + (y * w) + x) == 0) {
-		set_field(x, y, *(field + (y * w) + x));
-		*(flag + (y * w) + x) = 1;
-		if (*(field + (y * w) + x) == 0) {
-			if (x > 0) lprs_field(x - 1, y);
-			if (y > 0) lprs_field(x, y - 1);
-			if (x < (w - 1)) lprs_field(x + 1, y);
-			if (y < (h - 1)) lprs_field(x, y + 1);
-			if (x > 0 && y > 0) lprs_field(x - 1, y - 1);
-			if (x > 0 && y < (h - 1)) lprs_field(x - 1, y + 1);
-			if (x < (w - 1) && y > 0) lprs_field(x + 1, y - 1);
-			if (x < (w - 1) && y < (h - 1)) lprs_field(x + 1, y + 1);
-		}
-	}
-	else if (*(flag + (y * w) + x) == 1 && *(field + (y * w) + x) != 0) {
-		uint8_t fcnt = 0;
-		if (x > 0 && *(flag + (y * w) + (x - 1)) == 2) fcnt++;
-		if (y > 0 && *(flag + ((y - 1) * w) + x) == 2) fcnt++;
-		if (x < (w - 1) && *(flag + (y * w) + (x + 1)) == 2) fcnt++;
-		if (y < (h - 1) && *(flag + ((y + 1) * w) + x) == 2) fcnt++;
-		if (x > 0 && y > 0 && *(flag + ((y - 1) * w) + (x - 1)) == 2) fcnt++;
-		if (x > 0 && y < (h - 1) && *(flag + ((y + 1) * w) + (x - 1)) == 2) fcnt++;
-		if (x < (w - 1) && y > 0 && *(flag + ((y - 1) * w) + (x + 1)) == 2) fcnt++;
-		if (x < (w - 1) && y < (h - 1) && *(flag + ((y + 1) * w) + (x + 1)) == 2) fcnt++;
-		if (*(field + (y * w) + x) == fcnt) {
-			if (x > 0 && *(flag + (y * w) + (x - 1)) == 0) lprs_field(x - 1, y);
-			if (y > 0 && *(flag + ((y - 1) * w) + x) == 0) lprs_field(x, y - 1);
-			if (x < (w - 1) && *(flag + (y * w) + (x + 1)) == 0) lprs_field(x + 1, y);
-			if (y < (h - 1) && *(flag + ((y + 1) * w) + x) == 0) lprs_field(x, y + 1);
-			if (x > 0 && y > 0 && *(flag + ((y - 1) * w) + (x - 1)) == 0) lprs_field(x - 1, y - 1);
-			if (x > 0 && y < (h - 1) && *(flag + ((y + 1) * w) + (x - 1)) == 0) lprs_field(x - 1, y + 1);
-			if (x < (w - 1) && y > 0 && *(flag + ((y - 1) * w) + (x + 1)) == 0) lprs_field(x + 1, y - 1);
-			if (x < (w - 1) && y < (h - 1) && *(flag + ((y + 1) * w) + (x + 1)) == 0) lprs_field(x + 1, y + 1);
-		}
-	}
-}
-
-void rprs_field(uint8_t x, uint8_t y) {
-	if (!run) return;
-	if (*(flag + (y * w) + x) == 0) {
-		*(flag + (y * w) + x) = 2;
-		set_field(x, y, 9);
-		f--;
-		if (*(field + (y * w) + x) == 9) m--;
-	}
-	else if (*(flag + (y * w) + x) == 2) {
-		*(flag + (y * w) + x) = 0;
-		set_field(x, y, 11);
-		f++;
-		if (*(field + (y * w) + x) == 9) m++;
-	}
-	if (f == 0 && m == 0) {
-		run = 0;
-	}
-}
 
 void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 	if (but == GLFW_MOUSE_BUTTON_LEFT && act == GLFW_PRESS) {
@@ -213,7 +32,7 @@ void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 		glfwGetCursorPos(win, &dx, &dy);
 		int8_t x = ((int64_t) dx) / tile_w;
 		int8_t y = ((int64_t) dy) / tile_w;
-		lprs_field(x, y);
+		lprs_field(x, y - 1);
 	}
 	else if (but == GLFW_MOUSE_BUTTON_RIGHT && act == GLFW_PRESS) {
 		double dx;
@@ -221,7 +40,7 @@ void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 		glfwGetCursorPos(win, &dx, &dy);
 		int8_t x = ((int64_t) dx) / tile_w;
 		int8_t y = ((int64_t) dy) / tile_w;
-		rprs_field(x, y);
+		rprs_field(x, y - 1);
 	}
 }
 
@@ -232,7 +51,7 @@ void key_cb(GLFWwindow* win, int32_t key, int32_t scan, int32_t act, int32_t mod
 int16_t main() {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfw_win = glfwCreateWindow(1, 1, "nsweep", 0, 0);
+	GLFWwindow* glfw_win = glfwCreateWindow(1, 1, "nsweep", 0, 0);
 	glfwSetWindowAttrib(glfw_win, GLFW_RESIZABLE, GLFW_FALSE);
 	glfwSetKeyCallback(glfw_win, key_cb);
 	glfwSetMouseButtonCallback(glfw_win, mouse_cb);
@@ -247,58 +66,93 @@ int16_t main() {
 	free(glfw_img);
 	img_clr(img);
 	
-	gfx = gfx_init();
+	gfx_t* gfx = gfx_init();
 	gfx_cmd_t* cmd = gfx_cmd_init(gfx);
 	
-	gfx_vrtx_t* vrtx = gfx_vrtx_init(gfx, 2, 2, sizeof(pos));
-	gfx_vrtx_bind(vrtx, 0, 8);
-	gfx_vrtx_bind(vrtx, 1, 8);
-	gfx_vrtx_attr(vrtx, 0, 0, 8, 0);
-	gfx_vrtx_attr(vrtx, 1, 1, 8, 0);
-	gfx_vrtx_in(vrtx);
+	gfx_vrtx_t* field_vrtx = gfx_vrtx_init(gfx, 2, 2, sizeof(field_pos));
+	gfx_vrtx_bind(field_vrtx, 0, 8);
+	gfx_vrtx_bind(field_vrtx, 1, 8);
+	gfx_vrtx_attr(field_vrtx, 0, 0, 8, 0);
+	gfx_vrtx_attr(field_vrtx, 1, 1, 8, 0);
+	gfx_vrtx_in(field_vrtx);
 	
-	gfx_bfr_t* indx = gfx_indx_init(gfx, sizeof(ind));
+	gfx_bfr_t* field_indx = gfx_indx_init(gfx, sizeof(field_ind));
+	
+	gfx_vrtx_t* ascii_vrtx = gfx_vrtx_init(gfx, 2, 2, sizeof(ascii_pos));
+	gfx_vrtx_bind(ascii_vrtx, 0, 8);
+	gfx_vrtx_bind(ascii_vrtx, 1, 8);
+	gfx_vrtx_attr(ascii_vrtx, 0, 0, 8, 0);
+	gfx_vrtx_attr(ascii_vrtx, 1, 1, 8, 0);
+	gfx_vrtx_in(ascii_vrtx);
+	
+	gfx_bfr_t* ascii_indx = gfx_indx_init(gfx, sizeof(ascii_ind));
 	
 	img = bmp_read("img/atlas.bmp");
 	img_flip_h(img);
 	gfx_txtr_t* atlas = gfx_txtr_init(gfx, cmd, img->pix, img->w, img->h);
 	img_clr(img);
 	
-	gfx_dscr_t* dscr = gfx_dscr_init(gfx, 1);
-	gfx_dscr_writ(gfx, dscr, 0, 0, 0, 0, atlas);
+	img = bmp_read("img/ascii_white.bmp");
+	img_flip_h(img);
+	gfx_txtr_t* ascii = gfx_txtr_init(gfx, cmd, img->pix, img->w, img->h);
+	img_clr(img);
 	
-	win = gfx_win_init(gfx, glfw_win);
+	gfx_dscr_t* dscr = gfx_dscr_init(gfx, 2);
+	gfx_dscr_writ(gfx, dscr, 0, 0, 0, 0, atlas);
+	gfx_dscr_writ(gfx, dscr, 1, 0, 0, 0, ascii);
+	
+	gfx_win_t* win = gfx_win_init(gfx, glfw_win);
 	gfx_rndr_init(gfx, win);
 	
-	gfx_pipe_t* pipe = gfx_pipe_init(gfx, win, "shd/vrtx.spv", "shd/frag.spv", vrtx, dscr, sizeof(uni));
+	gfx_pipe_t* field_pipe = gfx_pipe_init(gfx, win, "shd/field_vrtx.spv", "shd/field_frag.spv", field_vrtx, dscr, sizeof(uni));
+	gfx_pipe_t* ascii_pipe = gfx_pipe_init(gfx, win, "shd/ascii_vrtx.spv", "shd/ascii_frag.spv", ascii_vrtx, dscr, sizeof(uni));
 	
 	gfx_swap_init(gfx, win);
 	gfx_dpth_init(gfx, win);
 	gfx_frme_init(gfx, win);
 	
-	gfx_clr(win, 16, 16, 16);
+	gfx_clr(win, 8, 8, 8);
+	
+	uni[0] = w * tile_w;
+	uni[1] = (h + 1) * tile_w;
+	gfx_resz(gfx, win, w * tile_w, (h + 1) * tile_w);
+	glfwSetWindowSize(glfw_win, w * tile_w, (h + 1) * tile_w);
 	
 	init_field();
 	
 	while(!glfwWindowShouldClose(glfw_win)) {
 		glfwPollEvents();
 		
-		gfx_vrtx_rfsh(gfx, vrtx, 0, pos, sizeof(pos));
-		gfx_vrtx_rfsh(gfx, vrtx, 1, tex, sizeof(tex));
-		gfx_bfr_rfsh(gfx, indx, ind, sizeof(ind));
+		gfx_vrtx_rfsh(gfx, field_vrtx, 0, field_pos, sizeof(field_pos));
+		gfx_vrtx_rfsh(gfx, field_vrtx, 1, field_tex, sizeof(field_tex));
+		gfx_bfr_rfsh(gfx, field_indx, field_ind, sizeof(field_ind));
+		
+		gfx_vrtx_rfsh(gfx, ascii_vrtx, 0, ascii_pos, sizeof(ascii_pos));
+		gfx_vrtx_rfsh(gfx, ascii_vrtx, 1, ascii_tex, sizeof(ascii_tex));
+		gfx_bfr_rfsh(gfx, ascii_indx, ascii_ind, sizeof(ascii_ind));
 		
 		gfx_next(gfx, win, cmd);
-		gfx_draw(gfx, win, pipe, cmd, indx, vrtx, dscr, uni, sizeof(uni), w * h * 5, 0, 0);
+		gfx_draw(gfx, win, field_pipe, cmd, field_indx, field_vrtx, dscr, uni, sizeof(uni), w * h * 5, 0, 0);
+		gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), rndr_text(scr, 0) * 5, 0, 0);
 		gfx_swap(gfx, win, cmd);
 	}
+	
+	free(scr.c);
 	free(field);
 	free(flag);
 	
-	gfx_vrtx_free(gfx, vrtx);
-	gfx_bfr_free(gfx, indx);
+	gfx_vrtx_free(gfx, field_vrtx);
+	gfx_bfr_free(gfx, field_indx);
+	gfx_vrtx_free(gfx, ascii_vrtx);
+	gfx_bfr_free(gfx, ascii_indx);
+	
 	gfx_txtr_free(gfx, atlas);
+	gfx_txtr_free(gfx, ascii);
 	gfx_dscr_free(gfx, dscr);
-	gfx_pipe_free(gfx, pipe);
+	
+	gfx_pipe_free(gfx, field_pipe);
+	gfx_pipe_free(gfx, ascii_pipe);
+	
 	gfx_win_free(gfx, win);
 	gfx_cmd_free(gfx, cmd);
 	gfx_free(gfx);
