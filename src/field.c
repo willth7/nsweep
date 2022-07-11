@@ -21,10 +21,10 @@
 
 uint8_t* field;
 uint8_t* flag;
-uint8_t w = 10;
-uint8_t h = 12;
+uint8_t w = 20;
+uint8_t h = 24;
 int16_t f;
-uint16_t m = 25;
+uint16_t m = 100;
 int8_t run;
 
 uint8_t tile_w = 40;

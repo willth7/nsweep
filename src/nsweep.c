@@ -19,14 +19,26 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "nsweep/field.h"
 #include "nsweep/ascii.h"
 
+gfx_t* gfx;
+gfx_win_t* win;
+uint8_t scene;
+
+struct text_s w_box;
+struct text_s h_box;
+struct text_s m_box;
+
+struct text_s* a_box;
+
 uint32_t uni[2];
 
 void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
-	if (but == GLFW_MOUSE_BUTTON_LEFT && act == GLFW_PRESS) {
+	if (but == GLFW_MOUSE_BUTTON_LEFT && act == GLFW_PRESS && !scene) {
 		double dx;
 		double dy;
 		glfwGetCursorPos(win, &dx, &dy);
@@ -34,7 +46,7 @@ void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 		int8_t y = ((int64_t) dy) / tile_w;
 		lprs_field(x, y - 1);
 	}
-	else if (but == GLFW_MOUSE_BUTTON_RIGHT && act == GLFW_PRESS) {
+	else if (but == GLFW_MOUSE_BUTTON_RIGHT && act == GLFW_PRESS && !scene) {
 		double dx;
 		double dy;
 		glfwGetCursorPos(win, &dx, &dy);
@@ -44,8 +56,51 @@ void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 	}
 }
 
-void key_cb(GLFWwindow* win, int32_t key, int32_t scan, int32_t act, int32_t mod) {
-	if (key == GLFW_KEY_ESCAPE && act == GLFW_PRESS) glfwSetWindowShouldClose(win, 1);
+void key_cb(GLFWwindow* glfw_win, int32_t key, int32_t scan, int32_t act, int32_t mod) {
+	if (key == GLFW_KEY_ESCAPE && act == GLFW_PRESS) glfwSetWindowShouldClose(glfw_win, 1);
+	else if (key == GLFW_KEY_TAB && act == GLFW_PRESS && !scene) {
+		uni[0] = 200;
+		uni[1] = 200;
+		gfx_resz(gfx, win, 200, 200);
+		glfwSetWindowSize(glfw_win, 200, 200);
+		scene = 1;
+	}
+	else if (key == GLFW_KEY_BACKSPACE && act == GLFW_PRESS && scene) a_box->c[strlen(a_box->c) - 1] = '\0';
+	else if (key == GLFW_KEY_UP && act == GLFW_PRESS && scene) {
+		if (a_box == &w_box) a_box = &m_box;
+		else if (a_box == &h_box) a_box = &w_box;
+		else if (a_box == &m_box) a_box = &h_box;
+	}
+	else if (key == GLFW_KEY_DOWN && act == GLFW_PRESS && scene) {
+		if (a_box == &w_box) a_box = &h_box;
+		else if (a_box == &h_box) a_box = &m_box;
+		else if (a_box == &m_box) a_box = &w_box;
+	}
+	else if (key == GLFW_KEY_ENTER && act == GLFW_PRESS && scene) {
+		w = atoi(w_box.c);
+		h = atoi(h_box.c);
+		m = atoi(m_box.c);
+		if (w > 0 && w <= 32 && h > 0 && h <= 32 && m > 0 && m <= 1023) {
+			uni[0] = w * tile_w;
+			uni[1] = (h + 1) * tile_w;
+			gfx_resz(gfx, win, w * tile_w, (h + 1) * tile_w);
+			glfwSetWindowSize(glfw_win, w * tile_w, (h + 1) * tile_w);
+			
+			free(field);
+			free(flag);
+			init_field();
+			scene = 0;
+		}
+	}
+}
+
+void char_cb (GLFWwindow* glfw_win, uint32_t c) {
+	if (scene) {
+		if (!strcmp(a_box->c, "width") || !strcmp(a_box->c, "height") || !strcmp(a_box->c, "mines")) a_box->c[0] = '\0';
+		uint8_t n = strlen(a_box->c);
+		a_box->c[n] = c;
+		a_box->c[n + 1] = '\0';
+	}
 }
 
 int16_t main() {
@@ -55,6 +110,7 @@ int16_t main() {
 	glfwSetWindowAttrib(glfw_win, GLFW_RESIZABLE, GLFW_FALSE);
 	glfwSetKeyCallback(glfw_win, key_cb);
 	glfwSetMouseButtonCallback(glfw_win, mouse_cb);
+	glfwSetCharCallback(glfw_win, char_cb);
 	
 	img_t* img = bmp_read("img/mine.bmp");
 	img_flip_h(img);
@@ -66,7 +122,7 @@ int16_t main() {
 	free(glfw_img);
 	img_clr(img);
 	
-	gfx_t* gfx = gfx_init();
+	gfx = gfx_init();
 	gfx_cmd_t* cmd = gfx_cmd_init(gfx);
 	
 	gfx_vrtx_t* field_vrtx = gfx_vrtx_init(gfx, 2, 2, sizeof(field_pos));
@@ -101,7 +157,7 @@ int16_t main() {
 	gfx_dscr_writ(gfx, dscr, 0, 0, 0, 0, atlas);
 	gfx_dscr_writ(gfx, dscr, 1, 0, 0, 0, ascii);
 	
-	gfx_win_t* win = gfx_win_init(gfx, glfw_win);
+	win = gfx_win_init(gfx, glfw_win);
 	gfx_rndr_init(gfx, win);
 	
 	gfx_pipe_t* field_pipe = gfx_pipe_init(gfx, win, "shd/field_vrtx.spv", "shd/field_frag.spv", field_vrtx, dscr, sizeof(uni));
@@ -111,7 +167,7 @@ int16_t main() {
 	gfx_dpth_init(gfx, win);
 	gfx_frme_init(gfx, win);
 	
-	gfx_clr(win, 8, 8, 8);
+	gfx_clr(win, 24, 24, 24);
 	
 	uni[0] = w * tile_w;
 	uni[1] = (h + 1) * tile_w;
@@ -119,6 +175,26 @@ int16_t main() {
 	glfwSetWindowSize(glfw_win, w * tile_w, (h + 1) * tile_w);
 	
 	init_field();
+	
+	w_box.c = calloc(8, 1);
+	w_box.x = 15;
+	w_box.y = 15;
+	w_box.sz = 15;
+	sprintf(w_box.c, "%s", "width");
+	
+	h_box.c = calloc(8, 1);
+	h_box.x = 15;
+	h_box.y = 75;
+	h_box.sz = 15;
+	sprintf(h_box.c, "%s", "height");
+	
+	m_box.c = calloc(8, 1);
+	m_box.x = 15;
+	m_box.y = 135;
+	m_box.sz = 15;
+	sprintf(m_box.c, "%s", "mines");
+	
+	a_box = &w_box;
 	
 	while(!glfwWindowShouldClose(glfw_win)) {
 		glfwPollEvents();
@@ -132,14 +208,26 @@ int16_t main() {
 		gfx_bfr_rfsh(gfx, ascii_indx, ascii_ind, sizeof(ascii_ind));
 		
 		gfx_next(gfx, win, cmd);
-		gfx_draw(gfx, win, field_pipe, cmd, field_indx, field_vrtx, dscr, uni, sizeof(uni), w * h * 5, 0, 0);
-		gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), rndr_text(scr, 0) * 5, 0, 0);
+		if (!scene) {
+			gfx_draw(gfx, win, field_pipe, cmd, field_indx, field_vrtx, dscr, uni, sizeof(uni), w * h * 5, 0, 0);
+			gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), rndr_text(scr, 0) * 5, 0, 0);
+		}
+		else if (scene) {
+			uint32_t i = 0;
+			i = rndr_text(w_box, 0);
+			i = rndr_text(h_box, i);
+			i = rndr_text(m_box, i);
+			gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), i * 5 + 5, 0, 0);
+		}
 		gfx_swap(gfx, win, cmd);
 	}
+	free(w_box.c);
+	free(h_box.c);
+	free(m_box.c);
 	
 	free(scr.c);
-	free(field);
-	free(flag);
+	if (field != 0) free(field);
+	if (field != 0) free(flag);
 	
 	gfx_vrtx_free(gfx, field_vrtx);
 	gfx_bfr_free(gfx, field_indx);
