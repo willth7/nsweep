@@ -32,6 +32,7 @@ uint8_t scene;
 struct text_s w_box;
 struct text_s h_box;
 struct text_s m_box;
+struct text_s _box;
 
 struct text_s* a_box;
 
@@ -42,16 +43,16 @@ void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 		double dx;
 		double dy;
 		glfwGetCursorPos(win, &dx, &dy);
-		int8_t x = ((int64_t) dx) / tile_w;
-		int8_t y = ((int64_t) dy) / tile_w;
+		int8_t x = ((int64_t) dx) / tile_sz;
+		int8_t y = ((int64_t) dy) / tile_sz;
 		lprs_field(x, y - 1);
 	}
 	else if (but == GLFW_MOUSE_BUTTON_RIGHT && act == GLFW_PRESS && !scene) {
 		double dx;
 		double dy;
 		glfwGetCursorPos(win, &dx, &dy);
-		int8_t x = ((int64_t) dx) / tile_w;
-		int8_t y = ((int64_t) dy) / tile_w;
+		int8_t x = ((int64_t) dx) / tile_sz;
+		int8_t y = ((int64_t) dy) / tile_sz;
 		rprs_field(x, y - 1);
 	}
 }
@@ -59,10 +60,10 @@ void mouse_cb(GLFWwindow* win, int32_t but, int32_t act, int32_t mod) {
 void key_cb(GLFWwindow* glfw_win, int32_t key, int32_t scan, int32_t act, int32_t mod) {
 	if (key == GLFW_KEY_ESCAPE && act == GLFW_PRESS) glfwSetWindowShouldClose(glfw_win, 1);
 	else if (key == GLFW_KEY_TAB && act == GLFW_PRESS && !scene) {
-		uni[0] = 200;
-		uni[1] = 200;
-		gfx_resz(gfx, win, 200, 200);
-		glfwSetWindowSize(glfw_win, 200, 200);
+		uni[0] = tile_sz * 5;
+		uni[1] = tile_sz * 5;
+		gfx_resz(gfx, win, tile_sz * 5, tile_sz * 5);
+		glfwSetWindowSize(glfw_win, tile_sz * 5, tile_sz * 5);
 		scene = 1;
 	}
 	else if (key == GLFW_KEY_BACKSPACE && act == GLFW_PRESS && scene) a_box->c[strlen(a_box->c) - 1] = '\0';
@@ -81,10 +82,10 @@ void key_cb(GLFWwindow* glfw_win, int32_t key, int32_t scan, int32_t act, int32_
 		h = atoi(h_box.c);
 		m = atoi(m_box.c);
 		if (w > 0 && w <= 32 && h > 0 && h <= 32 && m > 0 && m <= 1023) {
-			uni[0] = w * tile_w;
-			uni[1] = (h + 1) * tile_w;
-			gfx_resz(gfx, win, w * tile_w, (h + 1) * tile_w);
-			glfwSetWindowSize(glfw_win, w * tile_w, (h + 1) * tile_w);
+			uni[0] = w * tile_sz;
+			uni[1] = (h + 1) * tile_sz;
+			gfx_resz(gfx, win, w * tile_sz, (h + 1) * tile_sz);
+			glfwSetWindowSize(glfw_win, w * tile_sz, (h + 1) * tile_sz);
 			
 			free(field);
 			free(flag);
@@ -111,6 +112,23 @@ int16_t main() {
 	glfwSetKeyCallback(glfw_win, key_cb);
 	glfwSetMouseButtonCallback(glfw_win, mouse_cb);
 	glfwSetCharCallback(glfw_win, char_cb);
+	
+	const GLFWvidmode* vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	if (vid->width > 1000) {
+		tile_sz = 20;
+		text_sz = 7;
+
+	}
+	if (vid->width > 2000) {
+		tile_sz = 30;
+		text_sz = 12;
+
+	}
+	if (vid->width > 3000) {
+		tile_sz = 40;
+		text_sz = 15;
+
+	}
 	
 	img_t* img = bmp_read("img/mine.bmp");
 	img_flip_h(img);
@@ -169,30 +187,36 @@ int16_t main() {
 	
 	gfx_clr(win, 24, 24, 24);
 	
-	uni[0] = w * tile_w;
-	uni[1] = (h + 1) * tile_w;
-	gfx_resz(gfx, win, w * tile_w, (h + 1) * tile_w);
-	glfwSetWindowSize(glfw_win, w * tile_w, (h + 1) * tile_w);
+	uni[0] = w * tile_sz;
+	uni[1] = (h + 1) * tile_sz;
+	gfx_resz(gfx, win, w * tile_sz, (h + 1) * tile_sz);
+	glfwSetWindowSize(glfw_win, w * tile_sz, (h + 1) * tile_sz);
 	
 	init_field();
 	
 	w_box.c = calloc(8, 1);
-	w_box.x = 15;
-	w_box.y = 15;
-	w_box.sz = 15;
+	w_box.x = text_sz;
+	w_box.y = text_sz;
+	w_box.sz = text_sz;
 	sprintf(w_box.c, "%s", "width");
 	
 	h_box.c = calloc(8, 1);
-	h_box.x = 15;
-	h_box.y = 75;
-	h_box.sz = 15;
+	h_box.x = text_sz;
+	h_box.y = text_sz * 5;
+	h_box.sz = text_sz;
 	sprintf(h_box.c, "%s", "height");
 	
 	m_box.c = calloc(8, 1);
-	m_box.x = 15;
-	m_box.y = 135;
-	m_box.sz = 15;
+	m_box.x = text_sz;
+	m_box.y = text_sz * 9;
+	m_box.sz = text_sz;
 	sprintf(m_box.c, "%s", "mines");
+	
+	_box.c = calloc(8, 1);
+	_box.x = 6900;
+	_box.y = 6900;
+	_box.sz = 1;
+	sprintf(_box.c, "%s", "____");
 	
 	a_box = &w_box;
 	
@@ -209,21 +233,26 @@ int16_t main() {
 		
 		gfx_next(gfx, win, cmd);
 		if (!scene) {
+			uint32_t i = 0;
+			i = rndr_text(scr, 0);
+			i = rndr_text(_box, i);
 			gfx_draw(gfx, win, field_pipe, cmd, field_indx, field_vrtx, dscr, uni, sizeof(uni), w * h * 5, 0, 0);
-			gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), rndr_text(scr, 0) * 5, 0, 0);
+			gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), i * 5, 0, 0);
 		}
 		else if (scene) {
 			uint32_t i = 0;
 			i = rndr_text(w_box, 0);
 			i = rndr_text(h_box, i);
 			i = rndr_text(m_box, i);
-			gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), i * 5 + 5, 0, 0);
+			i = rndr_text(_box, i);
+			gfx_draw(gfx, win, ascii_pipe, cmd, ascii_indx, ascii_vrtx, dscr, uni, sizeof(uni), i * 5, 0, 0);
 		}
 		gfx_swap(gfx, win, cmd);
 	}
 	free(w_box.c);
 	free(h_box.c);
 	free(m_box.c);
+	free(_box.c);
 	
 	free(scr.c);
 	if (field != 0) free(field);

@@ -27,7 +27,9 @@ int16_t f;
 uint16_t m = 100;
 int8_t run;
 
-uint8_t tile_w = 40;
+uint8_t tile_sz = 10;
+uint8_t text_sz = 4;
+
 
 uint32_t field_pos[8192];
 uint32_t field_tex[8192];
@@ -43,22 +45,22 @@ void init_field() {
 	scr.c = calloc(8, 1);
 	scr.x = 0;
 	scr.y = 2;
-	scr.sz = 15;
+	scr.sz = text_sz;
 	
 	uint16_t i = 0;
 	for (uint8_t hi = 0; hi < h; hi++) {
 		for (uint8_t wi = 0; wi < w; wi++) {
-			field_pos[i * 8 + 0] = wi * tile_w;
-			field_pos[i * 8 + 1] = (hi + 1) * tile_w;
+			field_pos[i * 8 + 0] = wi * tile_sz;
+			field_pos[i * 8 + 1] = (hi + 1) * tile_sz;
 			
-			field_pos[i * 8 + 2] = wi * tile_w;
-			field_pos[i * 8 + 3] = (hi + 2) * tile_w;
+			field_pos[i * 8 + 2] = wi * tile_sz;
+			field_pos[i * 8 + 3] = (hi + 2) * tile_sz;
 			
-			field_pos[i * 8 + 4] = (wi + 1) * tile_w;
-			field_pos[i * 8 + 5] = (hi + 1) * tile_w;
+			field_pos[i * 8 + 4] = (wi + 1) * tile_sz;
+			field_pos[i * 8 + 5] = (hi + 1) * tile_sz;
 			
-			field_pos[i * 8 + 6] = (wi + 1) * tile_w;
-			field_pos[i * 8 + 7] = (hi + 2) * tile_w;
+			field_pos[i * 8 + 6] = (wi + 1) * tile_sz;
+			field_pos[i * 8 + 7] = (hi + 2) * tile_sz;
 			
 			field_tex[i * 8 + 0] = 11;
 			field_tex[i * 8 + 1] = 0;
@@ -106,17 +108,17 @@ void init_field() {
 }
 
 void set_field(uint8_t x, uint8_t y, uint8_t a) {
-	field_pos[((y * w) + x) * 8 + 0] = x * tile_w;
-	field_pos[((y * w) + x) * 8 + 1] = (y + 1) * tile_w;
+	field_pos[((y * w) + x) * 8 + 0] = x * tile_sz;
+	field_pos[((y * w) + x) * 8 + 1] = (y + 1) * tile_sz;
 	
-	field_pos[((y * w) + x) * 8 + 2] = x * tile_w;
-	field_pos[((y * w) + x) * 8 + 3] = (y + 2) * tile_w;
+	field_pos[((y * w) + x) * 8 + 2] = x * tile_sz;
+	field_pos[((y * w) + x) * 8 + 3] = (y + 2) * tile_sz;
 	
-	field_pos[((y * w) + x) * 8 + 4] = (x + 1) * tile_w;
-	field_pos[((y * w) + x) * 8 + 5] = (y + 1) * tile_w;
+	field_pos[((y * w) + x) * 8 + 4] = (x + 1) * tile_sz;
+	field_pos[((y * w) + x) * 8 + 5] = (y + 1) * tile_sz;
 	
-	field_pos[((y * w) + x) * 8 + 6] = (x + 1) * tile_w;
-	field_pos[((y * w) + x) * 8 + 7] = (y + 2) * tile_w;
+	field_pos[((y * w) + x) * 8 + 6] = (x + 1) * tile_sz;
+	field_pos[((y * w) + x) * 8 + 7] = (y + 2) * tile_sz;
 	
 	field_tex[((y * w) + x) * 8 + 0] = a;
 	field_tex[((y * w) + x) * 8 + 1] = 0;
@@ -138,7 +140,7 @@ void vict() {
 		}
 	}
 	sprintf(scr.c, "%s", "victory");
-	scr.x = ((w * tile_w) / 2) - ((strlen(scr.c) * scr.sz) / 2);
+	scr.x = ((w * tile_sz) / 2) - ((strlen(scr.c) * scr.sz) / 2);
 }
 
 void deft() {
@@ -149,7 +151,7 @@ void deft() {
 		}
 	}
 	sprintf(scr.c, "%s", "defeat");
-	scr.x = ((w * tile_w) / 2) - ((strlen(scr.c) * scr.sz) / 2);
+	scr.x = ((w * tile_sz) / 2) - ((strlen(scr.c) * scr.sz) / 2);
 }
 
 void lprs_field(uint8_t x, uint8_t y) {
@@ -195,7 +197,7 @@ void lprs_field(uint8_t x, uint8_t y) {
 		}
 	}
 	sprintf(scr.c, "%i", f);
-	scr.x = ((w * tile_w) / 2) - ((strlen(scr.c) * scr.sz) / 2);
+	scr.x = ((w * tile_sz) / 2) - ((strlen(scr.c) * scr.sz) / 2);
 }
 
 void rprs_field(uint8_t x, uint8_t y) {
@@ -218,5 +220,5 @@ void rprs_field(uint8_t x, uint8_t y) {
 		return;
 	}
 	sprintf(scr.c, "%i", f);
-	scr.x = ((w * tile_w) / 2) - ((strlen(scr.c) * scr.sz) / 2);
+	scr.x = ((w * tile_sz) / 2) - ((strlen(scr.c) * scr.sz) / 2);
 }

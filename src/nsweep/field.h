@@ -25,7 +25,8 @@ int16_t f;
 uint16_t m;
 int8_t run;
 
-uint8_t tile_w ;
+uint8_t tile_sz;
+uint8_t text_sz;
 
 uint32_t field_pos[8192];
 uint32_t field_tex[8192];
