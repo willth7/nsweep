@@ -13,14 +13,15 @@
 //   limitations under the License.
 
 #include <GLFW/glfw3.h>
-#include <gfx/gfx.h>
-#include <img/img.h>
-#include <img/bmp.h>
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "gfx/gfx.h"
+#include "img/img.h"
+#include "img/bmp.h"
 
 #include "nsweep/field.h"
 #include "nsweep/ascii.h"
@@ -140,7 +141,7 @@ int16_t main() {
 	free(glfw_img);
 	img_clr(img);
 	
-	gfx = gfx_init();
+	gfx = gfx_init(0);
 	gfx_cmd_t* cmd = gfx_cmd_init(gfx);
 	
 	gfx_vrtx_t* field_vrtx = gfx_vrtx_init(gfx, 2, 2, sizeof(field_pos));
