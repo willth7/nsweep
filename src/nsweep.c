@@ -67,7 +67,17 @@ void key_cb(GLFWwindow* glfw_win, int32_t key, int32_t scan, int32_t act, int32_
 		glfwSetWindowSize(glfw_win, tile_sz * 5, tile_sz * 5);
 		scene = 1;
 	}
-	else if (key == GLFW_KEY_BACKSPACE && act == GLFW_PRESS && scene) a_box->c[strlen(a_box->c) - 1] = '\0';
+	else if (key == GLFW_KEY_TAB && act == GLFW_PRESS && scene) {
+		if (a_box == &w_box) a_box = &h_box;
+		else if (a_box == &h_box) a_box = &m_box;
+		else if (a_box == &m_box) a_box = &w_box;
+	}
+	else if (key == GLFW_KEY_BACKSPACE && act == GLFW_PRESS && scene) {
+		a_box->c[strlen(a_box->c) - 1] = '\0';
+		if (strlen(w_box.c) == 0) sprintf(w_box.c, "%s", "width");
+		else if (strlen(h_box.c) == 0) sprintf(h_box.c, "%s", "height");
+		else if (strlen(m_box.c) == 0) sprintf(m_box.c, "%s", "mines");
+	}
 	else if (key == GLFW_KEY_UP && act == GLFW_PRESS && scene) {
 		if (a_box == &w_box) a_box = &m_box;
 		else if (a_box == &h_box) a_box = &w_box;
